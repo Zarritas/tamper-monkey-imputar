@@ -1,8 +1,8 @@
 <button id="setup-config" class="timesheet-btn timesheet-btn-secondary">⚙️</button><h3>📝 Crear Parte de Horas</h3>
 <div class="timesheet-info">
-    <div><strong>Proyecto:</strong> <span>${project}</span></div>
-    <div><strong>Tarea:</strong> <span>#${issue}</span></div>
-    <div><strong>Título:</strong> <span>${title}</span></div>
+    <div><strong>Proyecto:</strong> <span>{project}</span></div>
+    <div><strong>Tarea:</strong> <span>#{issue}</span></div>
+    <div><strong>Título:</strong> <span>{title}</span></div>
 </div>
 <div class="timesheet-form-group">
     <div style="display:flex; justify-content: space-between;">
@@ -12,7 +12,7 @@
         <span class="spinner"></span>
       </button>
     </div>
-    <textarea id="timesheet-description" placeholder="Describe el trabajo realizado...">${title}</textarea>
+    <textarea id="timesheet-description" placeholder="Describe el trabajo realizado...">{title}</textarea>
 </div>
 <div class="form-container">
     <div class="form-tabs">
@@ -47,7 +47,7 @@
 </div>
 <div class="timesheet-form-group" style="overflow: hidden;">
     <label for="timesheet-date">Fecha:</label>
-    <input type="date" id="timesheet-date" value="${date}">
+    <input type="date" id="timesheet-date" value="{date}">
 </div>
 <div class="timesheet-buttons">
     <button class="timesheet-btn timesheet-btn-primary" id="timesheet-submit">✅ Crear Parte</button>
