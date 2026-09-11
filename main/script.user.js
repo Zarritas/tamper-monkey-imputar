@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Imputaciones con OdooRPC - Popup
 // @namespace    http://tampermonkey.net/
-// @version      2.3.0
+// @version      2.4.0
 // @description  Create timesheet entries directly from GitLab using OdooRPC popup posibilidad de generar la descripción por IA
 // @author       Jesús Lorenzo
 // @match        https://git.*
@@ -12,6 +12,8 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
+// @grant        GM_registerMenuCommand
+// @grant        GM_unregisterMenuCommand
 // @resource ai_prompt https://raw.githubusercontent.com/Zarritas/tamper-monkey-imputar/refs/heads/main/main/prompts/prompt-ia.txt
 // @resource css https://raw.githubusercontent.com/Zarritas/tamper-monkey-imputar/refs/heads/main/main/css/style.css
 // @resource popup https://raw.githubusercontent.com/Zarritas/tamper-monkey-imputar/refs/heads/main/main/html/popup.html
@@ -58,12 +60,42 @@
   link.rel = "stylesheet";
   link.href = "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap";
   
+  // Preferencia de si el boton muestra su texto o solo el icono, alternable
+  // desde el menu de Tampermonkey.
+  const LABELS_KEY = "tm_button_labels";
+  let menuId = null;
+
+  function registrarMenu() {
+    if (typeof GM_registerMenuCommand !== "function") return;
+
+    // Re-registrar para que el texto del menu refleje el estado actual.
+    if (menuId !== null && typeof GM_unregisterMenuCommand === "function") {
+      GM_unregisterMenuCommand(menuId);
+    }
+
+    menuId = GM_registerMenuCommand(
+      DOM.areButtonLabelsVisible()
+        ? "Ocultar texto de los botones"
+        : "Mostrar texto de los botones",
+      () => aplicarEtiquetas(!DOM.areButtonLabelsVisible())
+    );
+  }
+
+  function aplicarEtiquetas(visible) {
+    GM_setValue(LABELS_KEY, DOM.setButtonLabels(visible));
+    registrarMenu();
+  }
+
+  DOM.setButtonLabels(GM_getValue(LABELS_KEY, true));
+  registrarMenu();
+
   // La vista work item es una app Vue: no hay "load" al cambiar de issue y
   // el header se repinta solo, tirandose el boton. onPage cubre ambos casos.
   DOM.onPage(() => {
     DOM.injectButton({
       id: BUTTON_ID,
-      text: "⏱️ Imputar Horas",
+      icon: "⏱️",
+      text: "Imputar Horas",
       title: "Imputar horas en Odoo",
       onClick: showTimesheetPopup
     });
