@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Imputaciones con OdooRPC - Popup
 // @namespace    http://tampermonkey.net/
-// @version      2.4.0
+// @version      2.5.0
 // @description  Create timesheet entries directly from GitLab using OdooRPC popup posibilidad de generar la descripción por IA
 // @author       Jesús Lorenzo
 // @match        https://git.*
@@ -97,6 +97,9 @@
       icon: "⏱️",
       text: "Imputar Horas",
       title: "Imputar horas en Odoo",
+      // Junto al boton Edit, y tambien en el header condensado que GitLab
+      // saca al hacer scroll hacia arriba (esa copia es BUTTON_ID--sticky).
+      placement: "header",
       onClick: showTimesheetPopup
     });
   }, {
