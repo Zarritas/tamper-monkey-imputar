@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Imputaciones con OdooRPC - Popup
 // @namespace    http://tampermonkey.net/
-// @version      2.5.0
+// @version      2.6.0
 // @description  Create timesheet entries directly from GitLab using OdooRPC popup posibilidad de generar la descripción por IA
 // @author       Jesús Lorenzo
 // @match        https://git.*
-// @include      */issues/*
+// @include      */-/issues/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=factorlibre.com
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -104,7 +104,7 @@
     });
   }, {
     guard: BUTTON_ID,
-    match: ctx => ctx.type === "issue" || ctx.type === "merge_request"
+    match: ctx => ctx.type === "issue"
   });
 
   async function enviarImputacion(issueInfo) {
