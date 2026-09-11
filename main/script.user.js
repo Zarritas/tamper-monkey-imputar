@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Imputaciones con OdooRPC - Popup
 // @namespace    http://tampermonkey.net/
-// @version      2.2.6
+// @version      2.3.0
 // @description  Create timesheet entries directly from GitLab using OdooRPC popup posibilidad de generar la descripción por IA
 // @author       Jesús Lorenzo
 // @match        https://git.*
@@ -16,6 +16,7 @@
 // @resource css https://raw.githubusercontent.com/Zarritas/tamper-monkey-imputar/refs/heads/main/main/css/style.css
 // @resource popup https://raw.githubusercontent.com/Zarritas/tamper-monkey-imputar/refs/heads/main/main/html/popup.html
 // @resource config-popup https://raw.githubusercontent.com/Zarritas/tamper-monkey-imputar/refs/heads/main/main/html/config-popup.html
+// @require      https://raw.githubusercontent.com/Zarritas/tm-framework/main/dist/tm-gitlab-dom.js
 // @require      https://raw.githubusercontent.com/Zarritas/tamper-monkey-imputar/refs/heads/main/main/scripts/utils.js
 // @require      https://raw.githubusercontent.com/Zarritas/tampermonkey-odoo-rpc/refs/heads/main/OdooRPC.js
 // @connect      *
@@ -25,6 +26,17 @@
 
 (function () {
   "use strict";
+
+  // Todos los selectores de GitLab viven en TMGitLabDOM (tm-framework):
+  // desde GitLab 18.x las issues usan la vista "work item" y los MRs siguen
+  // con el sidebar clasico, asi que cada lookup depende del layout.
+  if (!globalThis.TMGitLabDOM) {
+    console.error("[Imputar] TMGitLabDOM no se ha cargado. Revisa el @require.");
+    return;
+  }
+  const DOM = globalThis.TMGitLabDOM;
+  const BUTTON_ID = "imputar-horas-btn";
+
   let odooRPC = null;
   const link = document.createElement("link");
   let CONFIG = {
@@ -46,25 +58,18 @@
   link.rel = "stylesheet";
   link.href = "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap";
   
-  window.addEventListener("load", function () {
-    const sidebar = document.querySelector(
-      '.issuable-sidebar-header div[data-testid="sidebar-todo"]'
-    );
-    if (sidebar) {
-      const button = document.createElement("button");
-      button.classList.add(
-        "btn",
-        "hide-collapsed",
-        "btn-default",
-        "btn-sm",
-        "gl-button"
-      );
-      const span = document.createElement("span");
-      span.innerText = "⏱️ Imputar Horas";
-      button.appendChild(span);
-      button.addEventListener("click", showTimesheetPopup);
-      sidebar.appendChild(button);
-    }
+  // La vista work item es una app Vue: no hay "load" al cambiar de issue y
+  // el header se repinta solo, tirandose el boton. onPage cubre ambos casos.
+  DOM.onPage(() => {
+    DOM.injectButton({
+      id: BUTTON_ID,
+      text: "⏱️ Imputar Horas",
+      title: "Imputar horas en Odoo",
+      onClick: showTimesheetPopup
+    });
+  }, {
+    guard: BUTTON_ID,
+    match: ctx => ctx.type === "issue" || ctx.type === "merge_request"
   });
 
   async function enviarImputacion(issueInfo) {
@@ -225,8 +230,8 @@
         document.getElementById("config-status"),
         {
           day: dateField.value,
-          comments: document.getElementById("notes-list").textContent,
-          user: document.getElementById("disclosure-6").getElementsByClassName("gl-font-bold")[0].textContent
+          comments: DOM.getNotesText(),
+          user: DOM.getCurrentUser().name
         }
       );
     });
@@ -422,18 +427,12 @@
   }
 
   function getIssueInfo() {
-    let proyecto = `${document.location.origin}${document
-      .querySelector('div[data-testid="nav-item-link-label"')
-      .parentElement.getAttribute("href")}`;
+    // El proyecto sale de body[data-full-path]; el selector antiguo
+    // (nav-item-link-label) ahora casa con toda la nav lateral.
+    const proyecto = DOM.getProjectUrl();
     const tarea = window.location.href.split("#")[0];
+    const titulo = DOM.getTitle();
 
-    const titleElement =
-      document.querySelector('h1[data-testid="issue-title-text"]') ||
-      document.querySelector(".issue-title-text") ||
-      document.querySelector("h1.title");
-    const titulo = titleElement
-      ? titleElement.textContent.trim()
-      : `Issue #${tarea.split("/")[tarea.split("/").length - 1]}`;
     return { proyecto, tarea, titulo };
   }
 })();
